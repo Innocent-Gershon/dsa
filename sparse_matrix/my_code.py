@@ -14,8 +14,24 @@ class SparseMatrix:
                 self.rows = int(lines[0].split('=')[1])
                 self.cols = int(lines[1].split('=')[1])
                 self.data = [{} for _ in range(self.rows)]
-                for entry in lines[2:]:
-                    r, c, val = map(int, entry[1:-1].split(','))
+                
+                for i, entry in enumerate(lines[2:], start=3):
+                    # Check format of each entry line
+                    if not (entry.startswith('(') and entry.endswith(')')):
+                        print(f"Warning: Skipping malformed line {i}: {entry}")
+                        continue
+                    parts = entry[1:-1].split(',')
+                    if len(parts) != 3:
+                        print(f"Warning: Skipping malformed line {i}: {entry}")
+                        continue
+                    try:
+                        r, c, val = map(int, parts)
+                    except ValueError:
+                        print(f"Warning: Skipping line with invalid integers at line {i}: {entry}")
+                        continue
+                    if r < 0 or r >= self.rows or c < 0 or c >= self.cols:
+                        print(f"Warning: Skipping out-of-bounds index at line {i}: {entry}")
+                        continue
                     self.set_value(r, c, val)
         except Exception as e:
             raise e
