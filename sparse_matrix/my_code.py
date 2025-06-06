@@ -11,29 +11,41 @@ class SparseMatrix:
         try:
             with open(path, 'r') as file:
                 lines = [line.strip() for line in file if line.strip()]
+                # Validate header lines format
+                if not (lines[0].startswith("rows=") and lines[1].startswith("cols=")):
+                    raise ValueError("Input file has wrong format")
+
+                # Parse rows and cols
                 self.rows = int(lines[0].split('=')[1])
                 self.cols = int(lines[1].split('=')[1])
                 self.data = [{} for _ in range(self.rows)]
-                
+
                 for i, entry in enumerate(lines[2:], start=3):
-                    # Check format of each entry line
+                    # Strict format check: must start with '(' and end with ')'
                     if not (entry.startswith('(') and entry.endswith(')')):
-                        print(f"Warning: Skipping malformed line {i}: {entry}")
-                        continue
+                        raise ValueError(f"Input file has wrong format at line {i}")
+
+                    # Split inside parentheses by comma
                     parts = entry[1:-1].split(',')
+
+                    # Must have exactly 3 parts: row, col, value
                     if len(parts) != 3:
-                        print(f"Warning: Skipping malformed line {i}: {entry}")
-                        continue
+                        raise ValueError(f"Input file has wrong format at line {i}")
+
+                    # Check if all parts are integers (no floats allowed)
                     try:
                         r, c, val = map(int, parts)
                     except ValueError:
-                        print(f"Warning: Skipping line with invalid integers at line {i}: {entry}")
-                        continue
+                        raise ValueError(f"Input file has wrong format at line {i}")
+
+                    # Check bounds
                     if r < 0 or r >= self.rows or c < 0 or c >= self.cols:
-                        print(f"Warning: Skipping out-of-bounds index at line {i}: {entry}")
-                        continue
+                        raise ValueError(f"Index out of bounds at line {i}")
+
                     self.set_value(r, c, val)
+
         except Exception as e:
+            # Propagate exceptions
             raise e
 
     def set_value(self, row, col, value):
@@ -46,9 +58,13 @@ class SparseMatrix:
         return self.data[row].get(col, 0)
 
     def add(self, other):
+        if self.rows != other.rows or self.cols != other.cols:
+            raise ValueError("Matrix dimensions do not match for addition")
         return self._apply_elementwise(other, lambda x, y: x + y)
 
     def subtract(self, other):
+        if self.rows != other.rows or self.cols != other.cols:
+            raise ValueError("Matrix dimensions do not match for subtraction")
         return self._apply_elementwise(other, lambda x, y: x - y)
 
     def multiply(self, other):
@@ -58,6 +74,7 @@ class SparseMatrix:
         result = SparseMatrix(rows=self.rows, cols=other.cols)
         transposed = [{} for _ in range(other.cols)]
 
+        # Transpose other for faster column access
         for r in range(other.rows):
             for c, val in other.data[r].items():
                 transposed[c][r] = val
@@ -73,8 +90,10 @@ class SparseMatrix:
     def _apply_elementwise(self, other, operation):
         result = SparseMatrix(rows=self.rows, cols=self.cols)
         for r in range(self.rows):
+            # Copy this matrix's row elements first
             for c, v in self.data[r].items():
                 result.set_value(r, c, v)
+            # Apply operation with other matrix's row elements
             for c, v in other.data[r].items():
                 res_val = operation(result.get_value(r, c), v)
                 result.set_value(r, c, res_val)
@@ -98,6 +117,7 @@ class SparseMatrix:
                 print(row_display)
             else:
                 print(f"[{row_index}] Empty row")
+
 
 def main():
     try:
@@ -127,6 +147,7 @@ def main():
 
     except Exception as err:
         print(f"An error occurred: {err}")
+
 
 if __name__ == "__main__":
     main()
