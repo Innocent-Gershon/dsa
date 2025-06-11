@@ -146,7 +146,7 @@ class SparseMatrix:
 
 def main():
     try:
-        print("Select an operation:\n 1. Add\n 2. Subtract\n 3. Multiply")
+        print("Select an operation:\n 1. Add ➕\n 2. Subtract ➖\n 3. Multiply ✖️")
         op = input("Your choice (1/2/3): ").strip()
         if op not in {'1', '2', '3'}:
             print("Invalid choice. Please enter 1, 2, or 3.")
